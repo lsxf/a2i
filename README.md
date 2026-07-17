@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Android-14%2B-3DDC84?logo=android&logoColor=white" alt="Android 14+">
-  <img src="https://img.shields.io/badge/Release-v1.12.19-2563EB" alt="Release v1.12.19">
+  <img src="https://img.shields.io/badge/Release-v1.12.20-2563EB" alt="Release v1.12.20">
   <img src="https://img.shields.io/badge/Bark-支持-FF6B57" alt="Bark">
   <img src="https://img.shields.io/badge/ntfy-支持-338574" alt="ntfy">
   <img src="https://img.shields.io/badge/License-All%20Rights%20Reserved-E5484D" alt="License">
@@ -223,7 +223,7 @@ GotMsg 直接连接 SMTP 服务器发送邮件。QQ 邮箱、163、Gmail、Outlo
 4. 原手机上的 GotMsg 拉取任务并执行回复。
 5. 页面显示成功或具体失败原因。
 
-链接从通知转发起 **10 分钟内有效**，并且只允许成功提交一次。当前 Bark / ntfy 转发通知都会生成回复入口；如果原通知既没有系统快捷回复，也不属于兼容白名单，页面会明确返回不支持，而不会盲目操作原 App。
+链接从通知转发起 **10 分钟内有效**，并且只允许成功提交一次。Bark / ntfy 转发通知通常会生成回复入口；**短信 App 中识别出的验证码通知不添加回复链接**，因为验证码只需要读取或复制，不需要回复。如果其它通知既没有系统快捷回复，也不属于兼容白名单，页面会明确返回不支持，而不会盲目操作原 App。
 
 ### 三种回复方式
 
