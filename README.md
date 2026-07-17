@@ -8,6 +8,16 @@
 
 ---
 
+## 交流群
+
+使用中遇到配置、转发或远程回复问题，可以扫码加入 QQ 群交流。
+
+<p align="center">
+  <img src="screenshots/qq-group.png" alt="GotMsg QQ 群二维码" width="360">
+</p>
+
+---
+
 ## 一、五分钟上手
 
 ### 1. 安装
