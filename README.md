@@ -1,16 +1,388 @@
 # GotMsg · 有消息
 
-把安卓手机上的系统通知（短信、验证码、来电、微信、QQ、Telegram、企业微信、App 推送等）实时转发到 **iPhone、iPad、其它安卓机、鸿蒙机、桌面邮箱**，并在接收端直接**远程回复**原安卓手机。
+<p align="center">
+  <img src="screenshots/home-latest.png" alt="GotMsg 1.12.19 首页" width="360">
+</p>
 
-适用于把安卓备机的消息同步到主力机，不漏验证码、不漏重要聊天、不断网仍能收到关键通知。
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-14%2B-3DDC84?logo=android&logoColor=white" alt="Android 14+">
+  <img src="https://img.shields.io/badge/Release-v1.12.19-2563EB" alt="Release v1.12.19">
+  <img src="https://img.shields.io/badge/Bark-支持-FF6B57" alt="Bark">
+  <img src="https://img.shields.io/badge/ntfy-支持-338574" alt="ntfy">
+  <img src="https://img.shields.io/badge/License-All%20Rights%20Reserved-E5484D" alt="License">
+</p>
 
-![GotMsg 设置页](screenshots/overview.png)
+GotMsg 安装在一台 Android 手机上，读取这台手机收到的系统通知，再转发到 **iPhone、iPad、另一台 Android、鸿蒙手机或邮箱**。短信验证码、来电、微信、QQ、Telegram 和普通 App 通知都可以进入转发链路。
+
+除了“看通知”，GotMsg 还支持从 Bark / ntfy 通知打开一次性网页，把回复送回原 Android 手机：优先使用系统快捷回复，QQ 等 App 可走无障碍兼容回复，微信可走 Shizuku。
+
+> [!IMPORTANT]
+> GotMsg 不是聊天软件，也不会登录微信或 QQ。它处理的是 Android 通知；原 App 没有产生通知、通知内容被隐藏，或原手机被系统彻底休眠时，GotMsg 就拿不到对应内容。
+
+## 功能一览
+
+| 功能 | 状态 | 说明 |
+|---|---:|---|
+| 多通道转发 | 🟢 | Bark、ntfy、Meow、SMTP 电邮，可同时启用多条配置 |
+| 断网短信兜底 | 🟢 | 原手机断网时，用 SIM 卡短信转发验证码、来电等紧要通知 |
+| 验证码提取 | 🟢 | 识别 4–8 位验证码，可自动复制并提升重要通知级别 |
+| App 黑白名单 | 🟢 | 默认转发全部或只转发指定 App |
+| 广告与噪音过滤 | 🟢 | 内置规则、自定义关键词、常驻通知过滤和 5 秒去重 |
+| 来电与未接来电 | 🟢 | 兼容 MIUI / HyperOS；有权限时补充号码和联系人姓名 |
+| 远程回复 | 🟢 | Android `RemoteInput`、无障碍兼容回复、微信 Shizuku 回复 |
+| 锁屏 PIN 自动解锁 | 🟡 可选 | 仅 Shizuku 已运行时；PIN 用 Android Keystore 加密保存，每次最多尝试一次 |
+| 自动更新 | 🟢 | Gitea 优先、GitHub 备用；自动选择当前手机适配的 APK |
+| 日志与失败重试 | 🟢 | 最近 300 条处理记录；发送失败进入待重发队列 |
+
+## 目录
+
+- [先看懂两台手机的角色](#先看懂两台手机的角色)
+- [需要安装哪些 App](#需要安装哪些-app)
+- [十分钟上手](#十分钟上手)
+- [推送通道详细配置](#推送通道详细配置)
+- [远程回复详细教程](#远程回复详细教程)
+- [权限和后台保活](#权限和后台保活)
+- [过滤、来电、图标和更新](#过滤来电图标和更新)
+- [常见问题排查](#常见问题排查)
+- [界面截图](#界面截图)
+- [隐私与安全](#隐私与安全)
 
 ---
 
-## 交流群
+## 先看懂两台手机的角色
 
-使用中遇到配置、转发或远程回复问题，可以扫码加入 QQ 群交流。
+| 名称 | 是哪台设备 | 要做什么 |
+|---|---|---|
+| **原手机 / 发送端** | 收到短信、微信、QQ 等通知的 Android 手机 | 安装 GotMsg，授予通知读取权限，保持联网和后台运行 |
+| **接收端** | 你随身使用的 iPhone、iPad、Android、鸿蒙手机或电脑 | 根据通道安装 Bark、ntfy、Meow，或直接收邮件 / 短信 |
+
+举例：一台放在家里的小米 Android 手机插着银行卡手机号，你日常使用 iPhone。GotMsg 安装在小米手机，Bark 安装在 iPhone。
+
+> [!WARNING]
+> 不要把 GotMsg 只安装在接收端。GotMsg 必须安装在“实际收到原始通知”的 Android 手机上。
+
+## 需要安装哪些 App
+
+### 原 Android 手机上
+
+| App | 是否必须 | 用途 | 安装来源 |
+|---|---:|---|---|
+| **GotMsg** | 必须 | 读取、过滤和转发通知 | [本仓库 Releases](../../releases) |
+| **Shizuku** | 仅微信回复 / PIN 自动解锁需要 | 以 ADB shell 权限操作微信输入、发送和锁屏 PIN | [Shizuku 官网](https://shizuku.rikka.app/download/) / [GitHub Releases](https://github.com/RikkaApps/Shizuku/releases) |
+
+QQ、支付宝、淘宝和钉钉的兼容回复依赖 Android 系统自带的**无障碍服务**，不需要另外安装无障碍 App。
+
+### 接收端
+
+| 接收端 | 推荐方案 | 需要安装 |
+|---|---|---|
+| iPhone / iPad | **Bark** | [App Store](https://apps.apple.com/app/bark-custom-notifications/id1403753865) |
+| Android | **ntfy** | [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [F-Droid](https://f-droid.org/packages/io.heckel.ntfy/) / [GitHub](https://github.com/binwiederhier/ntfy/releases) |
+| iPhone（也想用 ntfy） | ntfy | [App Store](https://apps.apple.com/us/app/ntfy/id1625396347) |
+| 鸿蒙 / HarmonyOS | **Meow** | 从你使用的 Meow 项目或服务提供方安装；需要能取得推送接口和 Device Key / Token |
+| 电脑、平板 | 电邮 | 不需要专用 App，使用现有邮件客户端即可 |
+| 任意手机 | 断网短信兜底 | 不需要额外 App，使用系统短信应用接收 |
+
+打开远程回复网页只需要普通浏览器，不需要 iOS 快捷指令，也不需要额外的 `_reply` topic。
+
+---
+
+## 十分钟上手
+
+### 第 1 步：下载并安装 GotMsg
+
+1. 在原 Android 手机上打开 [Releases](../../releases)。
+2. 不知道手机架构时，下载文件名带 **`universal`** 的 APK，兼容性最好。
+3. 大多数近年的 Android 手机是 ARM64，也可以下载 **`arm64-v8a`**，体积略小。
+4. 浏览器提示“禁止安装未知应用”时，进入系统提示页，只允许当前浏览器或文件管理器完成这一次安装。
+5. 安装完成后打开 GotMsg。
+
+系统要求：**Android 14 / API 34 或更高版本**。低于 Android 14 无法安装。
+
+### 第 2 步：先配置一个接收通道
+
+第一次使用最推荐：
+
+- iPhone / iPad：选 **Bark**。
+- Android：选 **ntfy**。
+- 鸿蒙：选 **Meow**。
+- 只想在电脑查看：选 **电邮**。
+
+进入 GotMsg 底部 **设置**，找到相应通道，先按下方教程添加配置，再点击该配置右侧的发送按钮测试。接收端收到“GotMsg 测试”才算配置成功。
+
+### 第 3 步：授予通知读取权限
+
+1. 回到 GotMsg **首页**。
+2. 点击“需要授权通知监听”或“前往系统授权”。
+3. 在系统“设备和应用通知 / 通知使用权 / 通知访问”页面找到 GotMsg。
+4. 打开允许开关并确认风险提示。
+5. 返回 GotMsg，首页应显示 **“通知监听已开启 / 已授权”**。
+
+这项权限是核心权限；普通“允许 GotMsg 自己弹通知”不能代替通知读取权限。
+
+### 第 4 步：开启转发并实测
+
+1. 首页打开 **通知转发**。
+2. 用另一台手机给原手机发一条短信或聊天消息。
+3. 接收端应在几秒内收到对应通知。
+4. 如果没有收到，先打开 GotMsg **首页 → 查看转发日志**，日志会说明是已发送、被过滤还是发送失败。
+
+### 第 5 步：设置后台运行
+
+完成基础测试后，务必按[权限和后台保活](#权限和后台保活)设置自启动、后台无限制和省电白名单，否则锁屏一段时间后可能停止转发。
+
+---
+
+## 推送通道详细配置
+
+各通道都支持添加多条配置、单独启停和排序；Bark、ntfy、Meow 和电邮配置还可单独发送测试。“首个成功即止”适合相同通道的备用目标；关闭后会向该通道所有已启用配置广播。
+
+### Bark：发送到 iPhone / iPad
+
+1. 在 iPhone / iPad 安装 [Bark](https://apps.apple.com/app/bark-custom-notifications/id1403753865)。
+2. 第一次打开 Bark 时允许通知。
+3. Bark 首页会显示类似 `https://api.day.app/xxxxxxxx` 的推送地址，复制它。
+4. 原 Android 手机打开 GotMsg → **设置 → Bark 服务器 → 添加**。
+5. 按下面填写：
+
+   | 字段 | 填写内容 |
+   |---|---|
+   | 名称 | 自定义，例如“我的 iPhone” |
+   | 服务器地址 | 官方服务填 `https://api.day.app`，不要带最后的 Device Key |
+   | Device Key | Bark 地址最后 `/` 后面的字符串 |
+
+6. 保存后点击配置右侧的发送按钮。
+7. iPhone 收到“GotMsg 测试”即成功。
+
+远程回复启用后，点击 Bark 通知会进入 GotMsg 回复网页。为避免重复，回复地址不再同时显示在通知正文里。
+
+### ntfy：发送到 Android / iOS / 网页
+
+1. 在接收端安装 ntfy：Android 可用 [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy)、[F-Droid](https://f-droid.org/packages/io.heckel.ntfy/) 或 [GitHub Releases](https://github.com/binwiederhier/ntfy/releases)；iPhone 使用 [App Store](https://apps.apple.com/us/app/ntfy/id1625396347)。
+2. 打开 ntfy，添加一个订阅。
+3. 官方服务器填写 `https://ntfy.sh`。
+4. Topic 使用一串不容易猜到的随机名称，例如 `gotmsg_7f3a9c2e`。
+5. 原 Android 手机打开 GotMsg → **设置 → ntfy 转发 → 添加**。
+6. 服务器和 Topic 必须与接收端完全一致；Token 只有在自建 ntfy 并开启鉴权时才填写。
+7. 保存并发送测试。
+
+> [!CAUTION]
+> `ntfy.sh` 的公共 Topic 类似“知道名字就能进入的房间”。不要使用手机号、姓名、邮箱或 `test` 这类容易猜到的 Topic。需要更强隐私时请自建 ntfy 并启用访问控制。
+
+远程回复启用后，ntfy 通知会带“回复”动作，点击通知也会进入回复页；正文不再重复附加相同链接。
+
+### Meow：发送到鸿蒙手机
+
+Meow 不是 GotMsg 内置组件，需要先在鸿蒙手机上安装并完成 Meow 自身的推送注册。不同 Meow 服务的分发方式和接口格式可能不同，请以你所使用的 Meow 项目说明为准。
+
+1. 在鸿蒙手机打开 Meow，确认它能正常接收测试推送。
+2. 在 Meow 中找到完整推送接口 / 服务器地址和 Device Key / Token。
+3. GotMsg → **设置 → Meow 转发 → 添加**。
+4. 名称用于区分设备；服务器填写 Meow 给出的地址；Device Key 填 Meow 的设备 Key。
+5. 保存后发送测试。
+
+不要在 Device Key 中填写鸿蒙锁屏密码、华为账号密码或短信验证码。
+
+### SMTP 电邮
+
+GotMsg 直接连接 SMTP 服务器发送邮件。QQ 邮箱、163、Gmail、Outlook 等通常需要先在邮箱安全设置里开启 SMTP，并生成**授权码 / 应用专用密码**，不建议直接填写网页登录密码。
+
+| 字段 | 示例 |
+|---|---|
+| SMTP 主机 | `smtp.qq.com`、`smtp.163.com`、`smtp.gmail.com` |
+| 端口 | 国内邮箱通常用 `465`（隐式 SSL） |
+| 账号 | 完整邮箱地址 |
+| 授权码 / 密码 | 邮箱后台生成的 SMTP 授权码 |
+| 发件人 | 通常与账号一致 |
+| 收件人 | 实际接收通知的邮箱 |
+
+保存后务必发送测试。如果超时，先检查端口、授权码、运营商网络是否拦截 SMTP。
+
+### 断网短信兜底
+
+该功能在原 Android 手机**没有网络**时，用原手机 SIM 卡发送短信，因此会消耗短信套餐。
+
+1. GotMsg → **设置 → 断网短信兜底**，授予“发送短信”权限。
+2. 添加接收手机号并启用。
+3. 默认“仅紧要通知”只发送验证码和来电；关闭后会尝试发送全部通知。
+4. 建议保持限频，例如每 5 分钟最多 1 条。
+5. 开启余额检查后，余额低于或等于 5 时自动挂起；也可以使用手动短信额度。
+
+> [!WARNING]
+> 短信兜底不是普通在线转发通道。手机有网络时，通知仍走 Bark、ntfy、Meow 或邮件。
+
+---
+
+## 远程回复详细教程
+
+### 回复链路
+
+1. 原手机收到通知并转发到 Bark / ntfy。
+2. 接收端点击通知或“回复”动作，打开 `https://r.gotmsg.pp.ua`。
+3. 页面显示原通知的应用、标题和正文，输入回复内容并提交。
+4. 原手机上的 GotMsg 拉取任务并执行回复。
+5. 页面显示成功或具体失败原因。
+
+链接从通知转发起 **10 分钟内有效**，并且只允许成功提交一次。当前 Bark / ntfy 转发通知都会生成回复入口；如果原通知既没有系统快捷回复，也不属于兼容白名单，页面会明确返回不支持，而不会盲目操作原 App。
+
+### 三种回复方式
+
+| 方式 | 典型 App | 原手机额外要求 | 是否打开聊天页 |
+|---|---|---|---:|
+| Android `RemoteInput` | Telegram、WhatsApp、Signal、部分短信和企业 IM；以该条通知实际提供的动作为准 | 无 | 否 |
+| 无障碍兼容回复 | QQ、支付宝、淘宝、钉钉 | 开启 GotMsg 兼容回复无障碍服务 | 是 |
+| Shizuku 回复 | 微信 | 安装并启动 Shizuku，授权 GotMsg | 是 |
+
+同一个 App 并非所有通知都支持快捷回复：聊天通知可能支持，登录、营销、付款、订单和系统通知通常不支持。
+
+### QQ、支付宝、淘宝、钉钉：开启无障碍兼容回复
+
+1. GotMsg → **设置 → 通知回复**。
+2. 打开 **无障碍兼容回复**。
+3. 系统跳到无障碍页面后，找到 **GotMsg 兼容回复**。
+4. 阅读系统提示并启用服务。
+5. 返回 GotMsg，确认开关仍开启。
+
+执行时 GotMsg 会打开原通知对应的聊天页，拒绝覆盖已有草稿，只点击文字明确匹配“发送”的控件。回复结束后：有 Shizuku 时切回 GotMsg；无 Shizuku 时用无障碍返回桌面，避免 QQ 等聊天页停留前台后不再弹新通知。
+
+### 微信：安装和启动 Shizuku
+
+微信新版会屏蔽普通无障碍输入，因此微信回复必须使用 Shizuku。
+
+1. 从 [Shizuku 官网](https://shizuku.rikka.app/download/) 或 [GitHub Releases](https://github.com/RikkaApps/Shizuku/releases) 安装 Shizuku。
+2. Android 11 及以上推荐在 Shizuku 内按提示使用“无线调试”启动：
+   - 系统设置 → 关于手机，连续点击版本号，打开开发者选项；
+   - 开发者选项 → 无线调试；
+   - 在 Shizuku 中选择配对，按页面提示输入系统配对码；
+   - 配对完成后回到 Shizuku 点击启动。
+3. 打开 GotMsg 首页，Shizuku 状态卡应显示 **“Shizuku 已就绪”**。
+4. 如果显示“未授权”，点击 **授权 Shizuku**，并在 Shizuku 弹窗中允许 GotMsg。
+5. GotMsg → **设置 → 通知回复**，打开“无障碍兼容回复”总开关。微信实际执行走 Shizuku；仅为了微信时可以不启用系统无障碍服务。
+
+非 Root 方式启动的 Shizuku 在手机重启后通常需要重新启动。GotMsg 首页会直接显示当前状态。
+
+### 可选：Shizuku PIN 自动解锁
+
+适合原手机平时锁屏放置、希望收到远程回复后自动亮屏执行的场景。
+
+1. 确认 Shizuku 已就绪。
+2. GotMsg → **设置 → 通知回复**。
+3. 输入原手机 4–16 位数字锁屏 PIN，点击“保存并启用”。
+4. PIN 使用 Android Keystore AES-GCM 加密，仅保存在原手机，并排除云备份和设备迁移。
+5. 每个回复任务最多提交一次 PIN；失败不会自动重试，避免触发系统锁定策略。
+
+限制：手机重启后的第一次解锁仍必须手动完成；Shizuku 未运行时不能自动输入 PIN；图案、字母密码和生物识别不能代替这里的数字 PIN。
+
+完整技术说明和错误含义见 [通知远程回复文档](docs/notification-reply.md)。
+
+---
+
+## 权限和后台保活
+
+### 权限用途
+
+| 权限 / 系统服务 | 是否必须 | 用途 |
+|---|---:|---|
+| 通知使用权 / 通知访问 | **必须** | 读取原手机上的系统通知 |
+| 网络 | **必须** | 发送到各在线通道、检查更新和远程回复 |
+| GotMsg 自身通知 | 建议 | 显示状态和更新提醒；不能代替通知使用权 |
+| 电话 | 使用来电功能时 | 读取电话状态 |
+| 通话记录 | 使用未接来电时 | 通话结束后查找未接号码 |
+| 联系人 | 希望显示联系人姓名时 | 用号码反查本地联系人 |
+| 发送短信 | 使用断网兜底时 | 从原手机 SIM 卡发送短信 |
+| 无障碍 | 使用 QQ 等兼容回复时 | 找输入框、写入回复、点击发送和返回桌面 |
+| Shizuku | 使用微信回复 / PIN 解锁时 | 以 ADB shell 权限执行输入、剪贴板、点击和锁屏操作 |
+| 安装未知应用 | App 内更新时 | 下载完成后调起系统安装器 |
+
+### 防止锁屏后停止转发
+
+不同品牌名称不同，目标都是让 GotMsg 可以长期在后台运行：
+
+1. 系统设置 → 应用 → GotMsg → 电池 / 耗电管理 → 选择**无限制 / 不优化**。
+2. 在系统“自启动 / 后台启动 / 关联启动”里允许 GotMsg。
+3. 最近任务界面如果支持“锁定应用”，锁定 GotMsg。
+4. 不要使用一键清理、深度省电或第三方管家强制结束 GotMsg。
+5. 修改权限或系统升级后，回到首页确认“通知监听已开启”。
+
+小米 / HyperOS 常见路径：设置 → 应用设置 → 应用管理 → GotMsg → 省电策略 → 无限制，并允许自启动。三星常见路径：设置 → 电池 → 后台使用限制 → 从深度休眠应用中移除。
+
+---
+
+## 过滤、来电、图标和更新
+
+### 应用黑白名单
+
+- **黑名单模式**：默认转发所有 App，只排除你不想转发的 App；适合大多数人。
+- **白名单模式**：默认不转发，只允许勾选的 App；适合只收短信验证码或少数聊天 App。
+
+### 过滤与验证码
+
+“过滤”页可控制持续通知、验证码提取、广告过滤和特殊 App 优化。内置规则会过滤 VPN / 代理常驻通知、系统“正在运行”、近空内容和泛化“你有一条新消息”等噪音；用户可继续添加自定义广告关键词。
+
+每条通知在 5 秒窗口内去重。微信、QQ、Telegram 会进行专门解析；验证码可自动复制，重要通知会提高推送级别。
+
+### 来电和未接来电
+
+MIUI / HyperOS 经常不把系统电话通知交给第三方监听器。GotMsg 会额外轮询电话状态：
+
+- 来电时推送“有电话进来”；无障碍若能读取来电界面，可补充号码。
+- 通话结束后读取通话记录，识别未接号码；有联系人权限时显示姓名。
+
+### 应用图标
+
+在 **设置 → 应用图标** 填写公网图标 URL 前缀，并把已安装 App 图标导出到选定目录。上传后，GotMsg 按 `URL 前缀 + 包名 + .png` 生成通知图标地址。留空则不附加自定义图标。
+
+### 应用内更新
+
+- 启动约 5 秒后检查一次，之后每 24 小时巡检。
+- 同时查询 Gitea 和 GitHub；同版本优先 Gitea，取两边可用的最高版本。
+- 升级弹窗只显示当前目标版本和本次发版说明，不再展示一长串 ABI 安装包。
+- App 自动选择当前手机 ABI，对应包不存在时使用 universal。
+- 安装前 Android 会要求允许 GotMsg“安装未知应用”。
+
+---
+
+## 常见问题排查
+
+| 现象 / 报错 | 处理方法 |
+|---|---|
+| 完全没有转发 | 首页确认“通知监听已开启”和“通知转发”已打开；再检查至少一个通道配置已启用 |
+| 测试推送成功，锁屏后不再转发 | 设置电池无限制、自启动和最近任务锁定；检查系统是否撤销通知使用权 |
+| 日志显示“已过滤” | 点开该条日志查看原因；检查黑白名单、广告关键词、持续通知和特殊 App 规则 |
+| Bark 收不到 | 检查服务器地址不要带 Device Key；Device Key 不要漏字符；暂时关闭 VPN / 代理测试 |
+| ntfy 收不到 | 接收端与 GotMsg 的服务器和 Topic 必须完全一致；确认 ntfy App 允许通知和后台运行 |
+| Meow 收不到 | 先确认 Meow 自身能收测试；检查完整接口地址和 Device Key / Token |
+| 邮件发送失败 | 使用 SMTP 授权码而不是网页登录密码；检查 465/SSL、发件人和网络限制 |
+| 回复链接已过期 | 链接有效期 10 分钟；等待一条新通知再回复 |
+| 原通知已消失 | 不要划掉原手机通知；等待新通知重新生成会话 |
+| 微信提示 Shizuku 未就绪 | 打开 Shizuku 重新启动服务并授权 GotMsg；重启手机后通常需要重新启动 Shizuku |
+| 微信未进入聊天页 | 确认通知点击本身能打开对应聊天，而不是联系人页、登录页或广告页 |
+| QQ 找不到输入框 / 发送按钮 | 确认系统无障碍服务已开启；QQ 界面升级后可能需要重新适配，请保留 `A2iReply` 日志 |
+| 原手机设置了 PIN | 配置 Shizuku PIN 自动解锁，或先手动解锁再回复；首次开机解锁不能自动完成 |
+| 输入框已有草稿 | GotMsg 为避免覆盖原内容会主动停止；先在原手机处理草稿 |
+| 下载后不能安装更新 | 系统设置 → 特殊应用权限 → 安装未知应用 → 允许 GotMsg |
+
+日志页保存最近 300 条处理记录。发送失败会进入“待重发”，联网后由系统后台任务继续尝试。
+
+---
+
+## 界面截图
+
+原 README 首图 `overview.png` 已移动到本节，作为多通道设置界面展示。
+
+| 多通道设置 | 应用管理 | 过滤设置 |
+|---|---|---|
+| ![多通道设置](screenshots/overview.png) | ![应用管理](screenshots/apps.png) | ![过滤设置](screenshots/filter.png) |
+
+| 设置 | 转发日志 |
+|---|---|
+| ![设置](screenshots/settings.png) | ![转发日志](screenshots/log.png) |
+
+---
+
+## QQ 交流群
+
+配置、转发或远程回复遇到问题，可扫码加入 QQ 群。反馈回复问题时，建议同时提供 GotMsg 版本、手机型号、Android 版本、目标 App 版本和日志中的完整报错。
 
 <p align="center">
   <img src="screenshots/qq-group.png" alt="GotMsg QQ 群二维码" width="360">
@@ -18,162 +390,32 @@
 
 ---
 
-## 一、五分钟上手
+## 隐私与安全
 
-### 1. 安装
-从 [Releases](../../releases) 下载最新 APK，安装到**需要被转发的安卓手机**（需 Android 14 / API 34+）。Release 同时提供 universal 全架构包和 arm64-v8a / armeabi-v7a / x86 / x86_64 单架构包，App 内更新页会默认选中与你设备最匹配的版本。
+### 通知内容会经过哪里
 
-### 2. 选一个推送通道
-推荐三选一：
+- Bark、ntfy、Meow、SMTP 或短信服务需要接收你选择转发的通知内容；使用公共服务前请阅读对应服务的隐私政策。
+- 开启远程回复后，GotMsg 会把应用名、通知标题和正文注册到 `https://r.gotmsg.pp.ua`，用于回复页预览；回复正文也会经过该中继。
+- 回复链接包含一次性能力令牌。令牌放在 URL fragment 中，首次网页请求不会把它写入服务器访问日志；不要把有效回复链接转发给别人。
+- 中继保存设备鉴权哈希、通知预览、会话状态和短期回复任务；等待中的会话过期后清理，已处理状态和回复最多保留约 24 小时用于结果查询与排错。
 
-| 接收设备 | 推荐通道 | 难度 |
-|---|---|---|
-| iPhone / iPad | **Bark** | ⭐ 最简单 |
-| 安卓手机 | **ntfy** | ⭐ 推荐开源 |
-| 鸿蒙手机 | **Meow** | 鸿蒙专属 |
-| 任何能收邮件的设备 | **电邮** | 桌面/平板可用 |
+### 技术统计
 
-打开 GotMsg -> 「设置」-> 选对应通道 -> 点右上角 **i** 按钮 -> 按弹窗步骤配 -> 点该行「发送」测试。可以**同时启用多个通道**，所有勾选的会并行收到。
+当前版本会向项目自有的 `https://stats.gotmsg.pp.ua/v1/events` 发送安装、启动和各通道成功 / 失败等技术统计，包括随机安装 ID、Android ID、会话 ID、App 版本、Android 版本、厂商型号、语言地区、时区、网络类型、通道、状态和精简失败原因。统计事件不包含通知标题、通知正文、回复正文、Bark Key、ntfy Token、邮箱授权码或锁屏 PIN。
 
-### 3. 授权通知监听
-首页会提示「需要授权通知监听」。点击「前往系统授权」，在系统的通知访问设置中开启 GotMsg。
+### 本地敏感数据
 
-### 4. 开启转发
-首页打开「通知转发」开关。安卓收到通知后按配置自动推送到各通道。**发现新版时也会自动把更新通知推给所有已启用的通道**，不用进 App 也能升级。
+- Bark Key、ntfy Token、SMTP 配置等保存在 Android 应用私有存储中，请保护原手机锁屏和系统账号。
+- Shizuku 自动解锁 PIN 使用 Android Keystore AES-GCM 加密，且排除云备份与设备迁移；关闭功能后可在设置中删除 PIN。
+- 无障碍和 Shizuku 权限能力较高，只应在你信任、由你控制的原 Android 手机上启用。
 
 ---
 
-## 二、推送通道配置详解
+<details>
+<summary><strong>高级用户：自建 Bark / ntfy</strong></summary>
 
-每条配置都可独立勾选/删除/排序/测试。点「添加」时建议每条都先「发送」测试一次。
+### Bark Server
 
-### 2.1 Bark（iOS / iPadOS）
-
-[Bark](https://github.com/Finb/Bark) 是 iOS 上最轻量的推送方案，复制地址即用，**推荐所有 iOS 用户首选**。
-
-**配置步骤**：
-1. iPhone / iPad 上安装 Bark，首次打开允许通知权限。
-2. 复制 Bark 首页的推送地址，形如 `https://api.day.app/你的Key`。
-3. GotMsg「设置 -> Bark 服务器 -> 添加」：
-   - **名称**：随意，例如「我的 iPhone」
-   - **服务器地址**：`https://api.day.app`（自建则填自建地址）
-   - **Device Key**：Bark 地址中 `/` 后面的那段
-4. 保存后点「发送」测试；iPhone 收到「GotMsg 测试」即成功。
-5. 多台 iOS 设备：可继续添加多条 Bark 配置，每条独立勾选；列表顺序即推送顺序，可开启「首个成功即止」或全部广播。
-
-**为什么推荐 Bark**：iOS 上点击 Bark 通知体验最自然；通知附带 GotMsg 回复链接，可从 iPhone 直接回复原安卓；Bark 服务器在中国大陆可直接访问。
-
-### 2.2 ntfy（Android / iOS / 网页）
-
-[ntfy](https://ntfy.sh) 是开源的 HTTP pub-sub 通知服务，**支持 Android、iOS 和网页端**，无需注册项目。
-
-**配置步骤**：
-1. 接收端安装 ntfy：
-   - Android：[Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [F-Droid](https://f-droid.org/en/packages/io.heckel.ntfy/) / [GitHub](https://github.com/binwiederhier/ntfy)
-   - iOS：[App Store](https://apps.apple.com/us/app/ntfy/id1625396347)
-2. 打开 ntfy -> 添加订阅。服务器填 `https://ntfy.sh`（或自建地址）；Topic 用一串**随机难猜的名字**（如 `gotmsg_a8f3d2`）。
-3. GotMsg「设置 -> ntfy 转发 -> 添加」：
-   - **服务器**：与接收端完全一致
-   - **Topic**：与接收端完全一致
-   - **Token**：仅自建服务且启用了鉴权时填
-4. 保存后点「发送」测试；接收端收到「GotMsg 测试」即成功。
-
-> **安全提示**：公共 topic 谁知道名字就能订阅或发送。Topic 名**不要用**手机号、姓名、邮箱等可猜信息。
->
-> **远程回复**：GotMsg 在转发聊天类通知时，会**自动给 ntfy 通知挂上「View」动作按钮和正文中的回复链接**。iOS 上点通知本体只能进 ntfy App，要回复请点动作按钮或正文里的回复链接。
-
-### 2.3 Meow（鸿蒙 / HarmonyOS）
-
-Meow 是鸿蒙手机的推送接收方案。GotMsg 按你填写的 Meow 接口地址和 Device Key 发出 HTTP 请求即可。
-
-**配置步骤**：
-1. 鸿蒙手机上安装 Meow，确认 Meow 自身能正常接收推送。
-2. 在 Meow 里找到**推送接口地址**和对应的 **Device Key / Token**。
-3. GotMsg「设置 -> Meow 转发 -> 添加」：
-   - **名称**：按鸿蒙设备填写（方便区分多台）
-   - **服务器地址**：Meow 给出的完整 API 地址
-   - **Device Key**：Meow 给你的设备 Key（**不是**鸿蒙锁屏密码、华为账号密码）
-4. 保存后点「发送」测试；鸿蒙手机收到「GotMsg 测试」即成功。
-
-> 失败排查：检查 Meow 接口地址是否完整、Key 是否复制完整、鸿蒙手机是否允许 Meow 通知。
-
-### 2.4 电邮转发
-
-通过 SMTP 把通知发到邮箱（**适合无手机接收的场景**，如仅在桌面/平板查看）。GotMsg **直连 SMTP**，不依赖外部邮件服务。
-
-**配置步骤**：
-1. 准备一个 SMTP 邮箱（QQ/163/Gmail/Outlook 都可），**开启 SMTP 服务并生成授权码**（不是登录密码）。
-   - QQ：设置 -> 账户 -> POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务 -> 开启 SMTP -> 生成授权码
-   - 163：设置 -> POP3/SMTP/IMAP -> 开启 SMTP -> 设置授权码
-   - Gmail：账户 -> 安全性 -> 两步验证 -> 应用专用密码
-2. GotMsg「设置 -> 电邮转发 -> 添加」：
-   - **服务器（SMTP 主机）**：`smtp.qq.com` / `smtp.163.com` / `smtp.gmail.com` 等
-   - **端口**：`465`（推荐，隐式 SSL）
-   - **账号**：完整邮箱地址
-   - **授权码 / 密码**：上一步生成的授权码
-   - **发件人**：通常与账号相同
-   - **收件人**：接收通知的目标邮箱
-3. 保存后点「发送」测试；收件人收到「GotMsg 测试」即成功。
-
-> **国内邮箱推荐端口 465**（QQ/163 均支持）。Gmail 需要应用专用密码而不是账户密码。
-
-### 2.5 断网短信兜底
-
-**当安卓手机没有网络时**，把重要通知（验证码、来电）通过 **SIM 卡短信** 发到另一台手机（通常是你的 iPhone）。需要安卓卡里还有短信套餐余量。
-
-**配置步骤**：
-1. 在 GotMsg「设置 -> 短信兜底」点「授予短信权限」（安卓系统权限）。
-2. 点「添加」输入**目标手机号**（如 iPhone 号，接收端是另一台手机，**不是** GotMsg 本身）。
-3. 选运营商：
-   - 选了「自动识别」：GotMsg 会发免费查询短信给运营商服务号，解析回执获取余量。回执短信本身会被识别并拦截，不转发。
-   - 选了「手动额度」：在「手动短信额度」填入当前套餐短信条数，每次发短信后自动减 1。
-4. 当余量 ≤ 5 时自动暂停，下次打开 App 提醒续费。
-5. 频率限制：每 5 分钟最多发 1 条（避免刷屏），同一条通知 5 分钟内不重复。
-
-> **适用场景**：安卓手机没 WiFi 时，验证码不会丢，漏不了重要登录。
-
----
-
-## 三、通知远程回复（Bark / ntfy）
-
-GotMsg v1.11.0 起，Bark 和 ntfy 转发通知会附带回复入口，接收端在 iPhone 或 Android 上打开回复页输入内容后，回复会经 **GotMsg 中继（`https://r.gotmsg.pp.ua`）送回原 Android 手机**。GotMsg 优先使用原通知的 Android `RemoteInput` 快捷回复能力；微信等没有 `RemoteInput` 的 App 走无障碍兼容回复；微信 8.0.49+ 进一步屏蔽无障碍时，可启用 **Shizuku 路径**直接调用 `input` 命令绕过。
-
-### 3.1 三种回复路径
-
-| 路径 | 适用 | 是否需要解锁原手机 | 额外授权 |
-|---|---|---|---|
-| **原生 RemoteInput** | 短信、WhatsApp、企业 IM、Telegram 等暴露系统回复动作的 App | 否（后台执行） | 无 |
-| **无障碍兼容回复** | QQ、支付宝、淘宝、钉钉 | 是 | 「GotMsg 兼容回复」无障碍服务 |
-| **Shizuku 兼容回复（仅微信）** | 微信（绕过无障碍屏蔽） | 是 | Shizuku 已启动并授予 GotMsg 权限 |
-
-### 3.2 启用方式
-
-1. **Bark / ntfy 接收端**：无需任何额外配置。GotMsg 自动在通知正文或 ntfy 动作按钮里附上回复链接。
-2. **原 Android 手机**：
-   - 默认即可使用 `RemoteInput`（无需任何操作）。
-   - 想在没有 `RemoteInput` 的 App 上回复，进入「设置 -> 通知回复」打开「无障碍兼容回复」，再到系统无障碍设置里启用「GotMsg 兼容回复」服务。
-   - 想在最新版微信上回复，启用 **Shizuku**（在 GitHub Releases 下载并启动），GotMsg 首页会显示 Shizuku 状态卡片；点击「授权 Shizuku」即可。微信路径会自动以 Shizuku 身份模拟 `input tap` 聚焦输入框、写剪贴板、`KEYCODE_PASTE` 注入任意 Unicode，并通过截图像素扫描识别微信绿色发送按钮。
-
-### 3.3 使用流程
-
-- Bark：通知点击目标会优先变成回复页，正文也会附带回复链接；普通消息不会再跳微信/QQ 等原 App。
-- ntfy：通知附带 View 动作按钮和正文中的回复链接；iOS 上点通知本体只进入 ntfy App，请点动作按钮或正文里的回复链接。
-
-完整使用方法与限制见 [docs/notification-reply.md](docs/notification-reply.md)。接收端不需要安装 iOS 快捷指令，也不需要订阅额外的 `_reply` topic（旧版方案已移除，见 [docs/A2iReply-shortcut.md](docs/A2iReply-shortcut.md)）。
-
-> 链接 10 分钟内有效，只能成功提交一次。原生快捷回复可在后台执行；无障碍 / Shizuku 兼容回复会亮屏并打开原 App；自动解锁仅对**无密码滑动锁**有效，密码 / PIN / 指纹锁需手动解锁一次；完成后会**自动重新锁屏**。付款、订单、营销等非聊天通知不能回复。
-
----
-
-## 四、自建推送服务（可选）
-
-所有通道都支持自建，更好、更私密、可控。
-
-### 4.1 自建 Bark 服务器
-
-GotMsg 默认用 Bark 官方服务器（`https://api.day.app`），免费够用。自建适合追求完全控制。
-
-**Docker 一键部署**（推荐）：
 ```bash
 docker run -d --name bark --restart=unless-stopped \
   -p 8080:8080 \
@@ -181,13 +423,9 @@ docker run -d --name bark --restart=unless-stopped \
   finab/bark-server
 ```
 
-然后用 Nginx Proxy Manager 加 HTTPS 域名。详细三种方案对比请看 [Bark 官方文档](https://github.com/Finb/Bark)。
+用 Nginx / Caddy 配置 HTTPS 后，GotMsg 的服务器地址填写站点根地址，不要追加 `/push`。详情见 [Bark 文档](https://bark.day.app/#/) 和 [Bark GitHub](https://github.com/Finb/Bark)。
 
-**GotMsg 配置**：服务器地址填 `https://你的域名.com`（不要 `/push` 后缀），Device Key 填你在自建 Bark 上创建的 Key。
-
-### 4.2 自建 ntfy 服务器
-
-[ntfy](https://ntfy.sh) 是为自建设计的，**比 Bark 还简单**——官方直接提供 Docker 一行启动：
+### ntfy Server
 
 ```bash
 docker run -d --name ntfy --restart=unless-stopped \
@@ -196,133 +434,13 @@ docker run -d --name ntfy --restart=unless-stopped \
   binwiederhier/ntfy serve
 ```
 
-推荐加 Nginx 反代上 HTTPS 域名。完整文档：[docs.ntfy.sh](https://docs.ntfy.sh/install/)。
+生产使用建议配置 HTTPS、缓存文件和访问控制。详情见 [ntfy 安装文档](https://docs.ntfy.sh/install/)。
 
-**GotMsg 配置**：服务器地址填 `https://ntfy.你的域名.com`，Topic 照旧。
+</details>
 
-### 4.3 自建 Meow 服务器
-Meow 是鸿蒙客户端，服务端一般用 Meow 自带的。GotMsg 端无需配置服务端，只需填 Meow 给你的接口地址 + Key。
+## 发布与许可
 
----
-
-## 五、应用内更新
-
-GotMsg 内置更新检测：定期拉取 Gitea + GitHub Releases，**发现新版时自动向所有已启用通道推送一条更新通知**（带当前版本号、目标版本号、变更摘要、APK 大小）。首页显示醒目横幅，可选「立即下载」或「忽略此版本」。
-
-下载页会**默认选中匹配你设备 ABI 的 APK**（universal / arm64-v8a / armeabi-v7a / x86_64 / x86），也可手动切换架构；下载完成后通过 `FileProvider` 调起系统安装器。
-
-Gitea 源为主（国内可达），GitHub 为兜底；主源下载失败会自动尝试另一个源的同版本链接。
-
-> 取消自动检查：在「设置 -> 应用内更新」关闭「更新检查」即可，手动检查仍可用。
-
----
-
-## 六、来电与未接来电
-
-MIUI / HyperOS 不向第三方监听器分发系统电话通知。GotMsg 通过 **轮询 `TelephonyManager.getCallState()`** 绕过此限制：
-
-- **来电**：构造「有电话进来」推送（Android 14+ 禁止第三方读取实时号码）；如无障碍服务读到号码则展示真实号码。
-- **未接来电**：通话结束后查系统 `CallLog` 获取号码，并通过 `ContactsContract.PhoneLookup` 反查**联系人姓名**，推送形如「张三\n138xxxx」。
-
-需要在系统设置中授予「电话」权限（设置 -> 应用 -> GotMsg -> 权限 -> 电话）。
-
----
-
-## 七、过滤与噪音控制
-
-通知处理流水线（在 `NotificationProcessor` 中按顺序执行）：
-
-1. 全局开关
-2. 持续性通知（ongoing）静默
-3. VPN / 代理客户端（Surfboard、Clash Meta、Clash for Android、v2rayNG、小米设备互联）常驻通知静默
-4. 米家「设备状态」泛化通知静默（门锁 / 告警等具体事件仍正常转发）
-5. App 黑/白名单
-6. 空内容 / 脱敏内容
-7. 噪音包名（三星剪贴板 / 键盘、GMS、SystemUI、Google 输入法）
-8. 系统状态消息（"正在运行"等）
-9. **泛化无意义通知**（标题「新消息」+ 正文「你有一条新消息」等占位文案）静默
-10. 近空内容（纯符号 / 纯空格 / 仅 App 名）
-11. 广告过滤（内置营销关键词 + 用户自定义关键词）
-12. 已发短信（仅收不发）
-13. 运营商余额回执拦截（解析余量后不转发）
-14. 去重检查（5 秒窗口）
-15. 验证码提取（关键词 + 数字 / 数字 + 关键词 / 纯数字 4–8 位）
-16. 特殊 App 解析（微信 / QQ / Telegram 优化 + 重要消息关键词标记）
-17. 构造 BarkMessage 并推送
-
-验证码开启自动复制后会被复制到剪贴板；推送级别在重要消息上自动提升到 `timeSensitive` 以点亮 iOS 焦点通知。
-
----
-
-## 八、使用建议
-
-- **只想收验证码**：进入「过滤」页，开启「验证码自动提取」和「广告过滤」；再到「应用」页切到白名单模式，只勾选短信类 App。
-- **想同步聊天**：保持黑名单模式（默认），在「过滤」页开启「微信 / QQ / Telegram 优化」。
-- **通知没推过来**：先看「日志」页，每条通知（无论转发、过滤还是失败）都会记录原因。失败会自动加入 pending 队列，由 WorkManager 每 15 分钟重发。
-- **想让通知带图标**：见下方「应用图标」一节。
-- **电话通知不工作**：MIUI 不向第三方监听器分发系统电话通知，GotMsg 通过轮询 `getCallState()` 绕过此限制。需授予「电话」权限。
-- **断网收不到通知**：开启「设置 -> 短信兜底」并填好 iPhone 号码、授予短信权限。断网时验证码和来电走短信（消耗套餐额度，5 分钟限 1 条）。
-- **想全平台通知**：可同时启用多个通道（每个通道的多个条目独立勾选），所有启用的会同时收到。
-- **推送报 connection closed**：通常不是被墙，而是手机上的代理 / VPN 客户端干扰 Bark 服务器连接；先关代理或换自建 Bark 验证。
-
----
-
-## 九、应用图标
-
-Bark 和 ntfy 的通知 `icon` 字段需要公网可访问的图片 URL。GotMsg 支持把已安装 App 的图标批量导出，方便上传到你自己的图床。
-
-规则：转发时 `icon = 图标 URL 前缀 + 安卓包名 + .png`。在「设置 -> 应用图标」里：
-
-1. 填写图标 URL 前缀，例如 `https://你的图床域名/icons/`。
-2. 选择一个目录，点「导出图标」，把该目录下所有 App 的图标以 `包名.png` 形式导出。
-3. 把导出的图片上传到你的图床对应目录。
-
-留空前缀则不显示图标。
-
----
-
-## 十、构建与体积
-
-Release 构建开启 **R8 + 资源压缩**，universal APK 约 5 MB；同时输出 ABI splits，每个架构单独的 APK 体积更小。
-
-构建：
-```bash
-export JAVA_HOME="D:/Dev/JDK-17" ANDROID_HOME="D:/Dev/Android/SDK"
-./gradlew assembleRelease
-# 产物：app/build/outputs/apk/release/app-universal-release.apk
-#       app/build/outputs/apk/release/app-arm64-v8a-release.apk
-#       app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-#       app/build/outputs/apk/release/app-x86-release.apk
-#       app/build/outputs/apk/release/app-x86_64-release.apk
-```
-
-`release` 复用 `debug` 签名配置（`signingConfigs.getByName("debug")`），适合个人发布到 GitHub / Gitea Release；正式商店上架前需替换为独立的 release keystore。
-
----
-
-## 十一、界面截图
-
-| 首页 | 应用管理 | 过滤设置 |
-|---|---|---|
-| ![首页](screenshots/home.png) | ![应用管理](screenshots/apps.png) | ![过滤设置](screenshots/filter.png) |
-
-| 设置 | 转发日志 |
-|---|---|
-| ![设置](screenshots/settings.png) | ![转发日志](screenshots/log.png) |
-
----
-
-## 十二、隐私与安全
-
-- GotMsg **不收集任何遥测**到第三方；本地仅记录最少必要的设备 ID / 密钥（用于回复中继鉴权，256 位随机，备份规则明确排除）。
-- 回复中继 `https://r.gotmsg.pp.ua` 只持久化**设备密钥 + 回复令牌的 SHA-256 哈希**，正文 24 小时后清除；回复链接放在 URL fragment 中，不会进入服务器访问日志。
-- 拿到回复链接的人可在 10 分钟有效期内提交一次回复，因此不要转发或公开该链接。
-- 无障碍 / Shizuku 兼容回复仅在收到有效的一次性回复事件时运行，严格校验目标包名；Shizuku 路径只点击经像素扫描确认的微信绿色发送按钮，避免误操作。
-
----
-
-## License
-
-本项目仅供个人使用。自 v1.10.2 起闭源。
-
-All Rights Reserved. 保留所有权利。
+- 最新安装包：[Releases](../../releases)
+- Android 最低版本：Android 14 / API 34
+- 自 v1.10.2 起项目闭源，公开仓库保留用户文档、截图和 Release 安装包。
+- 本项目仅供个人使用，**All Rights Reserved / 保留所有权利**。
