@@ -1,14 +1,18 @@
 # GotMsg · 有消息
 
 <p align="center">
-  <img src="screenshots/home-latest.png" alt="GotMsg 1.16.9 首页" width="360">
+  <img src="screenshots/home-latest.png" alt="GotMsg 1.16.21 首页" width="360">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Android-14%2B-3DDC84?logo=android&logoColor=white" alt="Android 14+">
-  <img src="https://img.shields.io/badge/Release-v1.16.17-2563EB" alt="Release v1.16.17">
+  <img src="https://img.shields.io/badge/Release-v1.16.21-2563EB" alt="Release v1.16.21">
   <img src="https://img.shields.io/badge/Bark-支持-FF6B57" alt="Bark">
   <img src="https://img.shields.io/badge/ntfy-支持-338574" alt="ntfy">
+  <img src="https://img.shields.io/badge/Telegram-支持-229ED9" alt="Telegram">
+  <img src="https://img.shields.io/badge/飞书-支持-00B96B" alt="飞书">
+  <img src="https://img.shields.io/badge/钉钉-支持-1677FF" alt="钉钉">
+  <img src="https://img.shields.io/badge/Meow-支持-FF9800" alt="Meow">
   <img src="https://img.shields.io/badge/License-All%20Rights%20Reserved-E5484D" alt="License">
 </p>
 
